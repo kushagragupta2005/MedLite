@@ -1,0 +1,55 @@
+# DDInter exports are licensed CC BY-NC-SA 4.0; keep raw data out until
+# redistribution terms and attribution have been reviewed.
+/data/ddinter_downloads_code_*.csv
+
+# Public biomedical text corpus downloaded for local, out-of-domain diagnostics.
+# Keep corpus text and its split lists local; commit only the audit script/results.
+/data/medmentions_st21pv_corpus_pubtator.txt.gz
+/data/medmentions_*_pmids.txt
+
+# SMM4H tweets, converted annotation tables, and submission archives.
+/data/smm4h_*.tsv
+/data/smm4h_*.csv
+/data/smm4h_*_summary.json
+/baseline/smm4h_*.zip
+# Official deliveries may use organizer-specific filenames; keep all raw TSVs local.
+/data/*.tsv
+
+# Local database contains licensed interaction data and historical query logs.
+/baseline/med.db*
+
+# Generated evaluator outputs and stale hand-check sheets.
+/baseline/results.csv
+/baseline/verify.csv
+/baseline/validation_*_draft.csv
+/data/review_packets/
+
+__pycache__/
+*.py[cod]
+
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.DS_Store
+
+# Local databases, backups, and logs
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+*.log
+
+# Keep downloaded or converted datasets local
+/data/*.csv
+/data/*.tsv
+/data/*.gz
+/data/*.zip
+/data/review_packets/
+
+# Generated evaluation outputs
+/baseline/results.csv
+/baseline/verify.csv
+/baseline/validation_*_draft.csv
