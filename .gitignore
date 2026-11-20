@@ -1,55 +1,42 @@
-# DDInter exports are licensed CC BY-NC-SA 4.0; keep raw data out until
-# redistribution terms and attribution have been reviewed.
+# --- Licensed or third-party data: keep local ---------------------------------
+# DDInter exports are CC BY-NC-SA 4.0; keep raw data out until redistribution
+# terms and attribution have been reviewed.
 /data/ddinter_downloads_code_*.csv
-
-# Public biomedical text corpus downloaded for local, out-of-domain diagnostics.
-# Keep corpus text and its split lists local; commit only the audit script/results.
+# MedMentions corpus and split lists (local out-of-domain diagnostics only).
 /data/medmentions_st21pv_corpus_pubtator.txt.gz
 /data/medmentions_*_pmids.txt
-
-# SMM4H tweets, converted annotation tables, and submission archives.
-/data/smm4h_*.tsv
-/data/smm4h_*.csv
+# SMM4H tweets, converted tables and submission archives; official deliveries
+# may use organizer-specific filenames, so keep every raw/converted table local.
+/data/*.csv
+/data/*.tsv
+/data/*.gz
+/data/*.zip
 /data/smm4h_*_summary.json
 /baseline/smm4h_*.zip
-# Official deliveries may use organizer-specific filenames; keep all raw TSVs local.
-/data/*.tsv
+# ...except the project-authored annotation template.
+!/data/recognition_gold_template.csv
 
-# Local database contains licensed interaction data and historical query logs.
+# --- Local databases (licensed data and historical query logs) ----------------
 /baseline/med.db*
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
 
-# Generated evaluator outputs and stale hand-check sheets.
+# --- Generated outputs --------------------------------------------------------
 /baseline/results.csv
 /baseline/verify.csv
 /baseline/validation_*_draft.csv
 /data/review_packets/
+*.log
 
+# --- Python / OS / secrets ----------------------------------------------------
 __pycache__/
 *.py[cod]
-
-# Secrets and local configuration
+*.egg-info/
+.DS_Store
 .env
 .env.*
 !.env.example
 *.pem
 *.key
-.DS_Store
-
-# Local databases, backups, and logs
-*.db
-*.db-*
-*.sqlite
-*.sqlite3
-*.log
-
-# Keep downloaded or converted datasets local
-/data/*.csv
-/data/*.tsv
-/data/*.gz
-/data/*.zip
-/data/review_packets/
-
-# Generated evaluation outputs
-/baseline/results.csv
-/baseline/verify.csv
-/baseline/validation_*_draft.csv

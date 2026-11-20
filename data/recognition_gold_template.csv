@@ -1,0 +1,2 @@
+example_id,source_group,split,text,mentions_json,category,provenance,license_or_permission,review_status
+ex-0001,template-0001,train,I take ibuprofen after lunch.,"[{""start"":7,""end"":16,""surface"":""ibuprofen"",""normalized"":""ibuprofen""}]",generic,project-authored example,project-authored,draft

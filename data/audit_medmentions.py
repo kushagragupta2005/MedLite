@@ -65,10 +65,10 @@ def load_splits(directory):
 
 
 def load_alias_signatures():
-    sys.path.insert(0, str(ROOT / "baseline"))
-    import med
+    sys.path.insert(0, str(ROOT))
+    from medlite import Settings, connect
 
-    db = med.connect()
+    db = connect(Settings.from_env().db_path)
     try:
         return {token_signature(row[0])
                 for row in db.execute("SELECT alias FROM alias")

@@ -173,7 +173,7 @@ def score(gold_path, pred_path, split="test", allow_draft=False):
               "micro": prf(totals["tp"], totals["fp"], totals["fn"]),
               "by_category": {name: prf(c["tp"], c["fp"], c["fn"])
                               for name, c in sorted(categories.items())}}
-    print(json.dumps(result, indent=2, sort_keys=True))
+    return result
 
 
 def main():
@@ -203,7 +203,8 @@ def main():
                 return 1
             print("Corpus structure and source-group splits are valid.")
             return 0
-        score(args.gold, args.predictions, args.split, args.allow_draft)
+        result = score(args.gold, args.predictions, args.split, args.allow_draft)
+        print(json.dumps(result, indent=2, sort_keys=True))
         return 0
     except (OSError, ValueError) as exc:
         print(exc, file=sys.stderr)
