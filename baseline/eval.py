@@ -11,7 +11,9 @@ check clinical correctness; that is what Part 2 (manual check on the DDInter
 website) is for. Expected names use "a|b" when the data may spell a drug either way.
 """
 import csv, statistics, time
-import med
+import med  # also puts the repo root on sys.path
+from medlite.lookup import lookup
+from medlite.recognition import AliasIndex, find_drugs
 
 # (category, question, [expected drugs])
 CASES = [
@@ -57,8 +59,7 @@ PAIRS = [("warfarin", "ibuprofen"), ("warfarin", "acetaminophen"), ("simvastatin
          ("warfarin", "acetylsalicylic acid")]
 
 
-def run(db, fuzzy, have):
-    med.FUZZY = fuzzy
+def run(db, index, fuzzy, have):
     in_db = lambda item: any(x in have for x in item.split("|"))
     out, tpv, fp_t, fn_t, times = [], 0, 0, 0, []
     for cat, q, expected in CASES:
@@ -66,17 +67,18 @@ def run(db, fuzzy, have):
             out.append((cat, q, expected, "", "SKIP", 0.0, ""))
             continue
         t = time.perf_counter()
-        ids, corrections, suggestions, _ = med.find_drugs(db, q)
+        found = find_drugs(q, index, fuzzy=fuzzy)
+        ids = found.drug_ids
         suggestion_note = ""
-        if fuzzy and suggestions:
+        if fuzzy and found.suggestions:
             # This is a top-1 suggestion score: a person is assumed to confirm the suggestion.
             accepted = [{"input": s["input"], "drug_id": s["options"][0]["drug_id"]}
-                        for s in suggestions if s["options"]]
-            ids, corrections, _, _ = med.find_drugs(db, q, accepted)
+                        for s in found.suggestions if s["options"]]
+            ids = find_drugs(q, index, accepted, fuzzy=fuzzy).drug_ids
             suggestion_note = "; ".join(f"{s['input']} -> {s['options'][0]['name']} (confirmation needed)"
-                                         for s in suggestions if s["options"])
+                                         for s in found.suggestions if s["options"])
         if ids:
-            med.lookup(db, ids)
+            lookup(db, ids)
         ms = (time.perf_counter() - t) * 1000
         times.append(ms)
         got = {db.execute("SELECT name FROM drug WHERE id=?", (i,)).fetchone()[0] for i in ids}
@@ -93,10 +95,10 @@ def run(db, fuzzy, have):
 
 def main():
     db = med.connect()
+    index = AliasIndex.from_db(db)  # built once; index construction is not part of the timed lookups
     have = {r[0] for r in db.execute("SELECT name FROM drug")}
-    ex, pe, re_, te = run(db, False, have)
-    fz, pf, rf, tf = run(db, True, have)
-    med.FUZZY = True
+    ex, pe, re_, te = run(db, index, False, have)
+    fz, pf, rf, tf = run(db, index, True, have)
 
     with open("results.csv", "w", newline="") as f:
         w = csv.writer(f)

@@ -19,8 +19,9 @@ import json
 import zipfile
 from pathlib import Path
 
-import med
-from recognition_baseline import build_alias_index, fuzzy_alias_index, recognize
+import med  # also puts the repo root on sys.path
+from medlite.recognition import AliasIndex
+from recognition_baseline import recognize
 
 
 SUBMISSION_COLUMNS = [
@@ -63,12 +64,11 @@ def make_submission(input_path, output_path, use_fuzzy=False, fuzzy_threshold=0.
     tweets = unique_tweets(input_path)
     db = med.connect()
     try:
-        aliases = build_alias_index(db)
-        fuzzy = fuzzy_alias_index(aliases) if use_fuzzy else None
+        index = AliasIndex.from_db(db)
         rows = []
         mention_count = 0
         for tweet in tweets.values():
-            mentions = recognize(tweet["text"], aliases, fuzzy,
+            mentions = recognize(tweet["text"], index, use_fuzzy,
                                  fuzzy_threshold=fuzzy_threshold)
             if not mentions:
                 rows.append([tweet[key] for key in ("tweet_id", "user_id", "created_at", "text")]

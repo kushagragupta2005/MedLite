@@ -2,76 +2,30 @@
 """Generate exact dictionary baseline predictions with mention spans."""
 import argparse
 import csv
-import difflib
 import json
 import math
 import platform
-import re
 import statistics
+import sys
 import time
+from pathlib import Path
 
-import med
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # repo root, for the medlite package
 
+from medlite.recognition import FUZZY_THRESHOLD, AliasIndex, recognize as _recognize  # noqa: E402
 
-TOKEN = re.compile(r"[a-z0-9]+", re.IGNORECASE)
-
-
-def build_alias_index(db):
-    index = {}
-    for alias, drug_id in db.execute("SELECT alias, drug_id FROM alias"):
-        parts = tuple(token.group(0).lower() for token in TOKEN.finditer(alias))
-        if parts:
-            index[parts] = (drug_id, med.drug_name(db, drug_id))
-    return index
+import med  # noqa: E402  (opens the configured database: $MEDLITE_DB or baseline/med.db)
 
 
-def fuzzy_alias_index(alias_index):
-    candidates = {}
-    for alias, value in alias_index.items():
-        if len(alias) == 1 and len(alias[0]) >= 5 and alias[0].isalpha():
-            key = (alias[0][0], len(alias[0]))
-            candidates.setdefault(key, []).append((alias[0], value))
-    return candidates
-
-
-def recognize(text, alias_index, fuzzy_index=None, fuzzy_threshold=0.84):
-    tokens = list(TOKEN.finditer(text))
-    words = [token.group(0).lower() for token in tokens]
-    max_length = max((len(alias) for alias in alias_index), default=0)
-    mentions, index = [], 0
-    while index < len(tokens):
-        match = None
-        for length in range(min(max_length, len(tokens) - index), 0, -1):
-            entry = alias_index.get(tuple(words[index:index + length]))
-            if entry:
-                match = (length, entry)
-                break
-        if not match and fuzzy_index and words[index].isalpha() and len(words[index]) >= 6:
-            word = words[index]
-            candidates = []
-            for candidate_length in range(max(5, len(word) - 2), len(word) + 3):
-                for alias, value in fuzzy_index.get((word[0], candidate_length), ()):
-                    ratio = difflib.SequenceMatcher(None, word, alias).ratio()
-                    if ratio >= fuzzy_threshold:
-                        candidates.append((ratio, value[1], alias, value))
-            if candidates:
-                candidates.sort(key=lambda item: (-item[0], item[1], item[2]))
-                match = (1, candidates[0][3])
-        if not match:
-            index += 1
-            continue
-        length, (_, normalized) = match
-        start, end = tokens[index].start(), tokens[index + length - 1].end()
-        mentions.append({"start": start, "end": end,
-                         "surface": text[start:end], "normalized": normalized})
-        index += length
-    return mentions
+def recognize(text, index, top1_confirmed=False, fuzzy_threshold=FUZZY_THRESHOLD):
+    """Benchmark-format mentions from the same matcher the app uses."""
+    return [mention.as_benchmark_dict()
+            for mention in _recognize(text, index, top1_fuzzy=top1_confirmed, threshold=fuzzy_threshold)]
 
 
 def predict(corpus_path, output_path, split, top1_confirmed=False):
     db = med.connect()
-    aliases = build_alias_index(db)
-    fuzzy = fuzzy_alias_index(aliases) if top1_confirmed else None
+    index = AliasIndex.from_db(db)
     with open(corpus_path, newline="", encoding="utf-8-sig") as source, \
             open(output_path, "w", newline="", encoding="utf-8") as target:
         reader = csv.DictReader(source)
@@ -81,7 +35,7 @@ def predict(corpus_path, output_path, split, top1_confirmed=False):
         for row in reader:
             if row["split"].strip().lower() != split:
                 continue
-            mentions = recognize(row["text"], aliases, fuzzy)
+            mentions = recognize(row["text"], index, top1_confirmed)
             writer.writerow({"example_id": row["example_id"],
                              "mentions_json": json.dumps(mentions, ensure_ascii=False)})
             count += 1
@@ -94,8 +48,7 @@ def measure_latency(corpus_path, split, repeats, top1_confirmed=False):
     if repeats < 1:
         raise ValueError("repeats must be at least 1")
     db = med.connect()
-    aliases = build_alias_index(db)
-    fuzzy = fuzzy_alias_index(aliases) if top1_confirmed else None
+    index = AliasIndex.from_db(db)
     with open(corpus_path, newline="", encoding="utf-8-sig") as source:
         rows = [row for row in csv.DictReader(source)
                 if row["split"].strip().lower() == split]
@@ -106,12 +59,12 @@ def measure_latency(corpus_path, split, repeats, top1_confirmed=False):
     # Warm the matcher once per sentence; DB startup, index construction, and
     # file I/O are deliberately excluded from the per-sentence timings.
     for row in rows:
-        recognize(row["text"], aliases, fuzzy)
+        recognize(row["text"], index, top1_confirmed)
     samples = []
     for _ in range(repeats):
         for row in rows:
             start = time.perf_counter_ns()
-            recognize(row["text"], aliases, fuzzy)
+            recognize(row["text"], index, top1_confirmed)
             samples.append(time.perf_counter_ns() - start)
     samples.sort()
     p95 = samples[math.ceil(0.95 * len(samples)) - 1] / 1_000_000

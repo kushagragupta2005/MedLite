@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "medlite"
+version = "0.2.0"
+description = "Offline drug-interaction lookup where the database, not the model, is the source of truth."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.9"
+dependencies = []
+
+[project.scripts]
+medlite = "medlite.cli:main"
+
+[tool.setuptools]
+packages = ["medlite"]
+
+[tool.setuptools.package-data]
+medlite = ["static/*.html"]
