@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "MedLite: offline drug-interaction lookup with database-grounded, guarded summaries"
+abstract: >-
+  An offline drug-interaction lookup over DDInter with file-level provenance,
+  confirm-before-use spelling suggestions, pair-by-pair results that never present a
+  missing record as safe, and optional local-model summaries behind an output
+  guardrail. Information tool only; not medical advice.
+authors:
+  - family-names: Gupta
+    given-names: Kushagra
+    affiliation: Vellore Institute of Technology
+repository-code: "https://github.com/kushagragupta2005/MedLite"
+license: MIT
+date-released: "2026-10-16"
+keywords:
+  - drug-drug interactions
+  - pharmacovigilance
+  - health informatics
+  - named entity recognition
+  - LLM guardrails
+  - sqlite

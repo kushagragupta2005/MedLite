@@ -74,6 +74,17 @@ class Server(unittest.TestCase):
         self.assertEqual(status, 413)
 
 
+class PageTheme(unittest.TestCase):
+    def test_warning_text_follows_the_theme(self):
+        # Regression: warning boxes hard-coded dark-brown text, unreadable in the dark theme.
+        page = (ROOT / "medlite" / "static" / "index.html").read_text(encoding="utf-8")
+        light, dark = page.split("@media(prefers-color-scheme:dark)", 1)
+        for selector in (".safety{", ".empty{", ".notice{"):
+            rule = light[light.index(selector):].split("}", 1)[0]
+            self.assertIn("color:var(--warn-ink)", rule, selector)
+        self.assertIn("--warn-ink:", dark.split("}", 1)[0])
+
+
 class Cli(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
