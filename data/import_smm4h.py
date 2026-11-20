@@ -43,14 +43,14 @@ def canonical_name(official_name, aliases):
 
 
 def load_alias_index():
+    """Token-signature -> (drug_id, normalized name), from the same index the app uses."""
     import sys
-    sys.path.insert(0, str(ROOT / "baseline"))
-    import med
-    from recognition_baseline import build_alias_index
+    sys.path.insert(0, str(ROOT))
+    from medlite import AliasIndex, Settings, connect
 
-    db = med.connect()
+    db = connect(Settings.from_env().db_path)
     try:
-        return build_alias_index(db)
+        return AliasIndex.from_db(db).exact
     finally:
         db.close()
 
